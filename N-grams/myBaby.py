@@ -12,41 +12,74 @@ def stemMyStrings(words):
     newListSAS = []
     for word in words:
         newListSAS.append(stemmer.stem(word))
-
     return "".join(newListSAS)
 
-def makeGram(strings, n):
-    # Loop all words that are fiven as input
-    gramList = []
+# Make a n-gram out of list of strings, where each string is a sentance
+# Strings = array of strings
+# N = order of n-gram
+def make_ngram(strings, n=1):
     gramDict = {}
+    # Loop strings
     for string in strings:
         split = string.split()
+        # Loop substrings of length n and append to dictionary
         for k in range(0, len(split) - n + 1):
             tmpWord  = " ".join(split[k:k+n])
             if tmpWord not in gramDict.keys():
                 gramDict[tmpWord] = 1
             else:
                 gramDict[tmpWord] += 1
-            gramList.append(" ".join(split[k:k+n]))
-
-
-    #n_gram = countGram(gramList)
     return gramDict
 
-def ngramProbability(ngram, nminusgram, word, suffix, smoothing = "", k = 1):
-    if suffix + ' ' + word in ngram.keys():
-
-    if smoothing == "k":
-        words = len(nminusgram)
-        return (ngram[suffix + ' ' + word] + k) / (nminusgram[suffix] + k * words)
+# Evaluates given unigram as count(word) / count(*)
+def eval_unigram(ngram, word):
+    wordcount = sum(ngram.values())
+    if word in ngram.keys():
+        return ngram[word] / wordcount
     else:
-        if suffix + ' ' + word in ngram.keys():
-            return ngram[suffix + ' ' + word] / nminusgram[suffix]
-    return 0
+        return 0
 
-def calculatePMI(jointDist, soloDist, word1, word2):
-    if word1 + ' ' + word2 in jointDist.keys():
-        return np.log2(float(jointDist[word1 + ' ' + word2] / (soloDist[word1] * soloDist[word2])))
+# Evaluates given n-gram as: n-gram_count(string) / (n-1)-gram_count(string - 1)
+def eval_gram(ngram, mgram, suffix, word):
+    cond = suffix + ' ' + word
+
+    if cond in ngram.keys():
+        divident = ngram[cond]
+        divisor = mgram[suffix]
+        return divident / divisor
+    else:
+        return 0
+
+# Evaluates n-gram with given smoothing parameters
+# n-grams: List of n-grams in decreasing order
+# word: word we are evaluating
+# suffix: string trailing the word
+def eval_ngram(ngrams, suffix, word, smoothing = "", k = 1):
+
+    assert len(ngrams) >= 2, "Atleast two grams yo"
+    # add k-smoothing
+    if smoothing == "k":
+        return 1
+    # discount smoothing
+    if smoothing == "d":
+        return 0
+    # BackOff smoothing
+    if smoothing == "bo":
+        return 0
+    # Stupid BackOff
+    if smoothing == "sbo":
+        return 0
+    # Normal n-gram
+    else:
+        return eval_gram(ngrams[0], ngrams[1], suffix, word)
+
+
+def calculatePMI(ngram2, ngram1, word1, word2):
+    if word1 + ' ' + word2 in ngram2.keys():
+        divident = eval_gram(ngram2, ngram1, word1, word2)
+        divisor = eval_unigram(ngram1, word1) * eval_unigram(ngram1, word2)
+
+        return np.log2(divident / divisor)
     return 0
 
 
@@ -63,15 +96,19 @@ with open(path) as f:
 
 
 
-bigram = makeGram(ngramList, 2)
-unigram = makeGram(ngramList, 1)
+bigram = make_ngram(ngramList, 2)
+unigram = make_ngram(ngramList, 1)
+grams = [bigram, unigram]
 
+print(calculatePMI(bigram, unigram, "my", "songs"))
+
+"""
 #test = sorted(bigram.items(), key=lambda x: x[1], reverse=True)
 # print(test)
 # print(bigram["my songs"])
 # print(unigram["my"])
 # print(unigram["songs"])
 # print(calculatePMI(bigram, unigram, "my", "songs"))
-
 print(len(unigram))
 print(ngramProbability(bigram, unigram, "cat", "my", smoothing="k"))
+"""
