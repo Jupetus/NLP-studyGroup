@@ -139,9 +139,11 @@ def find_ml_word(gram2, gram1, word):
 
     # Change index next to split according to the n-gram! TODO: make it bettar!
     test = [(key.split()[2], eval_ngram_word([gram2, gram1], word, key.split()[2], smoothing="k")) for key in keyList]
-    ml = max(test, key=itemgetter(1))[0]
-    ml_word = ml
-
+    if len(test) > 0:
+        ml = max(test, key=itemgetter(1))[0]
+        ml_word = ml
+    else:
+        ml_word = '<s>'
     return ml_word
 
 def make_a_story(grams, start_word = "i", story_length=100):
@@ -165,9 +167,14 @@ with open(path) as f:
     for line in f.readlines():
         review = line.split('$')
         tokenized = rTokenizer.tokenize(review[2].lower().strip())
-        ngramList.append(stemMyStrings(" ".join(tokenized)))
+        # Should we have word breaks!? <s> <s> is a quick fix! TODO: fix it really!
+        stemmed = '<s> <s> ' + stemMyStrings(" ".join(tokenized)) + ' </s>'
+
+        ngramList.append(stemmed)
         review[2] = " ".join(tokenized)
         Reviews.append(review)
+# If word breaks are included, need que to start new sentances
+ngramList.append('</s> <s>')
 
 print(Reviews[1])
 trigram = make_ngram(ngramList, 3)
@@ -176,11 +183,11 @@ unigram = make_ngram(ngramList, 1)
 grams = [trigram, bigram, unigram]
 
 # Story part!
-print(make_a_story(grams, start_word="i like", story_length=20))
+print(make_a_story(grams, start_word="<s> but", story_length=50))
 
 # Evaluate my n-gram
 grams = [bigram, unigram]
 print(eval_ngram_word(grams, "like", "to", smoothing = "k"))
 
 # PMI calculation
-print(calculatePMI(bigram, unigram, "like", "to"))
+print(calculatePMI(bigram, unigram, "i", "like"))
