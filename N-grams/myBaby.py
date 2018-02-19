@@ -1,6 +1,6 @@
 import numpy as np
 import nltk
-from nltk.stem import SnowballStemmer
+from nltk.stem import PorterStemmer
 from nltk.tokenize import RegexpTokenizer
 from nltk.util import ngrams
 from nltk import word_tokenize
@@ -16,7 +16,7 @@ TODO: Make it so that works for all grams
 Gosh this came out looking bit confusing
 ===================
 """
-stemmer = SnowballStemmer('english')
+stemmer = PorterStemmer() # SnowballStemmer('english')
 rTokenizer = RegexpTokenizer('\w+')
 
 def stemMyStrings(words):
@@ -134,10 +134,11 @@ def find_ml_word(gram2, gram1, word):
     keyList = []
     for key in gram2.keys():
         split = key.split()
-        if split[0] == word:
+        if " ".join(split[:-1]) == word:
             keyList.append(key)
 
-    test = [(key.split()[1], eval_ngram_word([gram2, gram1], word, key.split()[1])) for key in keyList]
+    # Change index next to split according to the n-gram! TODO: make it bettar!
+    test = [(key.split()[2], eval_ngram_word([gram2, gram1], word, key.split()[2], smoothing="k")) for key in keyList]
     ml = max(test, key=itemgetter(1))[0]
     ml_word = ml
 
@@ -145,16 +146,17 @@ def find_ml_word(gram2, gram1, word):
 
 def make_a_story(grams, start_word = "i", story_length=100):
     prevString = start_word
-    story = [start_word]
+    newcond = start_word
+    story = start_word.split()
     for i in range(story_length):
-        prevString = find_ml_word(grams[0], grams[1], prevString)
+        prevString = find_ml_word(grams[0], grams[1], newcond)
         story.append(prevString)
+        newcond = " ".join(story[-2:])
 
     return " ".join(story)
 
 
 
-stemmer = SnowballStemmer('english')
 path = "Dataset2.txt"
 Reviews = []
 ngramList = []
@@ -164,7 +166,21 @@ with open(path) as f:
         review = line.split('$')
         tokenized = rTokenizer.tokenize(review[2].lower().strip())
         ngramList.append(stemMyStrings(" ".join(tokenized)))
+        review[2] = " ".join(tokenized)
+        Reviews.append(review)
 
+print(Reviews[1])
+trigram = make_ngram(ngramList, 3)
 bigram = make_ngram(ngramList, 2)
 unigram = make_ngram(ngramList, 1)
+grams = [trigram, bigram, unigram]
+
+# Story part!
+print(make_a_story(grams, start_word="i like", story_length=20))
+
+# Evaluate my n-gram
 grams = [bigram, unigram]
+print(eval_ngram_word(grams, "like", "to", smoothing = "k"))
+
+# PMI calculation
+print(calculatePMI(bigram, unigram, "like", "to"))
