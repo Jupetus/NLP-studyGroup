@@ -173,6 +173,7 @@ with open(path) as f:
         ngramList.append(stemmed)
         review[2] = " ".join(tokenized)
         Reviews.append(review)
+
 # If word breaks are included, need que to start new sentances
 ngramList.append('</s> <s>')
 
@@ -183,7 +184,7 @@ unigram = make_ngram(ngramList, 1)
 grams = [trigram, bigram, unigram]
 
 # Story part!
-print(make_a_story(grams, start_word="<s> but", story_length=50))
+print(make_a_story(grams, start_word="<s> but", story_length=10))
 
 # Evaluate my n-gram
 grams = [bigram, unigram]
