@@ -12,8 +12,8 @@ def build_model(input_dim, output_dim):
     # uses it internally.
     model = torch.nn.Sequential()
     model.add_module("linear", torch.nn.Linear(input_dim, output_dim, bias=False))
+    model.add_module("output", torch.nn.Sigmoid())
     return model
-
 
 def train(model, loss, optimizer, x_val, y_val):
     x = Variable(x_val, requires_grad=False)
@@ -101,7 +101,7 @@ def main():
 
     model = build_model(n_features, n_classes)
     loss = torch.nn.CrossEntropyLoss(size_average=True)
-    optimizer = optim.SGD(model.parameters(), lr=0.024, momentum=0.9)
+    optimizer = optim.SGD(model.parameters(), lr=0.025, momentum=0.9)
     batch_size = 100
     num_batches = len(train_data) // batch_size
     for epoch in range(100):
